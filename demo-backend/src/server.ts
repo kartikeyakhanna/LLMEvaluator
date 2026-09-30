@@ -10,9 +10,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (_req, res) => {
+  res.json({
+    message: "Demo backend is running",
+  });
+});
+
 app.post("/chat", async (req,res) => {
   try{
     const {prompt} = req.body;
+    console.log("Received prompt:", prompt);
     if(!prompt)
         {
       return res.status(400).json({
@@ -20,9 +27,11 @@ app.post("/chat", async (req,res) => {
       });
     }
 
+    console.log("Calling Gemini...");
     const start=Date.now();
     const result = await askGemini(prompt);
     const latencyMs=Date.now()-start;
+    console.log("Gemini responded.");
     res.json({
       response: result.text,
       latencyMs,
@@ -33,4 +42,8 @@ app.post("/chat", async (req,res) => {
       error: "Failed to generate response.",
     });
   }
+});
+
+app.listen(3000, () => {
+  console.log("Demo backend running on http://localhost:3000");
 });
