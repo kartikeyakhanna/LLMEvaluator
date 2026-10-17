@@ -17,7 +17,9 @@ app.get("/", (_req, res) => {
 });
 
 app.post("/chat", async (req,res) => {
-  try{
+    const timestamp=new Date().toISOString();
+    const startTime=Date.now();
+    try{
     const {prompt} = req.body;
     console.log("Received prompt:", prompt);
     if(!prompt)
@@ -28,19 +30,48 @@ app.post("/chat", async (req,res) => {
     }
 
     console.log("Calling Gemini...");
-    const start=Date.now();
     const result = await askGemini(prompt);
-    const latencyMs=Date.now()-start;
+    const latencyMs=Date.now()-startTime;
+    const trace={
+        prompt,
+        response: result.response,
+        model: result.model,
+        latencyMs,
+        inputTokens: result.usage.inputTokens,
+        outputTokens: result.usage.outputTokens,
+        totalTokens: result.usage.totalTokens,
+        timestamp,
+        status: "success",
+
+    }
     console.log("Gemini responded.");
-    res.json({
-      response: result.text,
-      latencyMs,
-    });
+    console.log(trace);
+    res.json(trace);
   } catch (error){
     console.error("Gemini error:", error);
-    res.status(500).json({
-      error: "Failed to generate response.",
-    });
+    const latencyMs=Date.now()-startTime;
+    const trace = {
+      prompt: req.body?.prompt ?? "",
+      response: "",
+      model: "gemini-3.7-flash",
+
+      latencyMs,
+
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+
+      timestamp,
+
+      status: "error",
+
+      error: error instanceof Error
+        ? error.message
+        : "Unknown error",
+    };
+    console.error("LLM Trace:");
+    console.log(trace);
+    res.status(500).json(trace);
   }
 });
 
