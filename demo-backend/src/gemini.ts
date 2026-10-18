@@ -13,20 +13,29 @@ const ai = new GoogleGenAI({
   apiKey,
 });
 
-export async function askGemini(prompt: string) {
-  const response = await ai.models.generateContent({
+export interface GeminiResult {
+  response: string;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+}
+
+export async function askGemini(
+  prompt: string
+): Promise<GeminiResult> {
+  const result = await ai.models.generateContent({
     model: model,
     contents: prompt,
   });
 
-  return {
-    response: response.text ?? "",
-    model: model,
+  const usage = result.usageMetadata;
 
-    usage: {
-      inputTokens: response.usageMetadata?.promptTokenCount ?? 0,
-      outputTokens: response.usageMetadata?.candidatesTokenCount ?? 0,
-      totalTokens: response.usageMetadata?.totalTokenCount ?? 0,
-    },
+  return {
+    response: result.text ?? "",
+    model: model,
+    inputTokens: usage?.promptTokenCount ?? 0,
+    outputTokens: usage?.candidatesTokenCount ?? 0,
+    totalTokens: usage?.totalTokenCount ?? 0,
   };
 }
